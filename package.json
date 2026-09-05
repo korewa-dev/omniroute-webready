@@ -1,0 +1,11 @@
+{
+  "name": "omniroute-webready",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Cloudflare-native AI router — no separate backend needed",
+  "scripts": {
+    "dev": "npx wrangler pages dev .",
+    "deploy": "npx wrangler pages deploy .",
+    "db:setup": "npx wrangler d1 execute omniroute-db --file=./schema.sql"
+  }
+}
