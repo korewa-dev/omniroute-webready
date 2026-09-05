@@ -7,9 +7,5 @@ binding = "DB"
 database_name = "omniroute-db"
 database_id = "b2d908dc-8c91-4fe2-93f0-8c40bfc2a02e"
 
-[[kv_namespaces]]
-binding = "CACHE"
-id = "YOUR_KV_ID_HERE"
-
 [vars]
 ENVIRONMENT = "production"
