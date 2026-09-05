@@ -2,15 +2,15 @@
 // Handles all /v1/* API calls with D1-backed routing, auth, and usage tracking
 
 const PROVIDERS = [
-  { id: 'openai', name: 'OpenAI', baseUrl: 'https://api.openai.com/v1', needsKey: true },
-  { id: 'anthropic', name: 'Anthropic', baseUrl: 'https://api.anthropic.com/v1', needsKey: true },
-  { id: 'google', name: 'Google AI', baseUrl: 'https://generativelanguage.googleapis.com/v1beta', needsKey: true },
-  { id: 'groq', name: 'Groq', baseUrl: 'https://api.groq.com/openai/v1', needsKey: true },
-  { id: 'together', name: 'Together AI', baseUrl: 'https://api.together.xyz/v1', needsKey: true },
-  { id: 'openrouter', name: 'OpenRouter', baseUrl: 'https://openrouter.ai/api/v1', needsKey: true },
-  { id: 'oc-free', name: 'OpenCode Free', baseUrl: 'https://api.opencode.chat/v1', needsKey: false },
-  { id: 'felo', name: 'Felo Free', baseUrl: 'https://api.felo.ai/v1', needsKey: false },
-  { id: 'kimi-free', name: 'Kimi Free', baseUrl: 'https://api.moonshot.cn/v1', needsKey: true },
+  { id: 'openai', name: 'OpenAI', baseUrl: 'https://api.openai.com/v1', needsKey: true, models: ['gpt-4o-mini','gpt-4o','gpt-4-turbo','gpt-3.5-turbo'] },
+  { id: 'anthropic', name: 'Anthropic', baseUrl: 'https://api.anthropic.com/v1', needsKey: true, models: ['claude-3-5-sonnet-20241022','claude-3-5-haiku-20241022','claude-3-opus-20240229'] },
+  { id: 'google', name: 'Google AI', baseUrl: 'https://generativelanguage.googleapis.com/v1beta', needsKey: true, models: ['gemini-1.5-flash','gemini-1.5-pro','gemini-1.0-pro'] },
+  { id: 'groq', name: 'Groq', baseUrl: 'https://api.groq.com/openai/v1', needsKey: true, models: ['llama-3.1-8b-instant','llama-3.1-70b-versatile','mixtral-8x7b-32768','gemma2-9b-it'] },
+  { id: 'together', name: 'Together AI', baseUrl: 'https://api.together.xyz/v1', needsKey: true, models: ['meta-llama/Llama-3.3-70B-Instruct-Turbo','mistralai/Mixtral-8x7B-Instruct-v0.1'] },
+  { id: 'openrouter', name: 'OpenRouter', baseUrl: 'https://openrouter.ai/api/v1', needsKey: true, models: ['auto','anthropic/claude-3.5-sonnet','google/gemini-1.5-flash','meta-llama/llama-3.1-8b-instruct'] },
+  { id: 'oc-free', name: 'OpenCode Free', baseUrl: 'https://api.opencode.chat/v1', needsKey: false, models: ['oc/gpt-3.5-turbo','oc/gpt-4o-mini'] },
+  { id: 'felo', name: 'Felo Free', baseUrl: 'https://api.felo.ai/v1', needsKey: false, models: ['felo/gpt-3.5-turbo','felo/llama-3.1-8b'] },
+  { id: 'kimi-free', name: 'Kimi Free', baseUrl: 'https://api.moonshot.cn/v1', needsKey: true, models: ['kimi/moonshot-v1-8k','kimi/moonshot-v1-32k'] },
 ];
 
 function cors() {
@@ -30,10 +30,23 @@ function jsonError(msg, status = 400) {
 
 function selectProvider(model) {
   if (!model || model === 'auto') return PROVIDERS.find(p => !p.needsKey) || PROVIDERS[0];
+  
+  // Exact match first
   for (const p of PROVIDERS) {
-    if (p.models?.some(m => model.startsWith(m.split('/')[0]) || model === m)) return p;
+    if (p.models?.some(m => m === model)) return p;
   }
-  return PROVIDERS[0];
+  
+  // Prefix match (e.g. "gpt-4o" matches provider that has "gpt-4o-mini")
+  for (const p of PROVIDERS) {
+    if (p.models?.some(m => m.startsWith(model) || model.startsWith(m))) return p;
+  }
+  
+  // Model name starts with provider id (e.g. "openai/gpt-4o")
+  for (const p of PROVIDERS) {
+    if (model.startsWith(p.id + '/')) return p;
+  }
+  
+  return PROVIDERS.find(p => !p.needsKey) || PROVIDERS[0];
 }
 
 async function getApiKeyFromDB(db, key) {
@@ -116,7 +129,21 @@ export async function onRequest(context) {
       if (dbKey) apiKeyId = dbKey.id;
     }
 
-    const upstreamBody = { ...body, model: (provider.models && provider.models[0]) || model };
+    // Build upstream request — use the model as-is or map to provider's model
+    let upstreamModel = model;
+    if (model.includes('/')) {
+      // e.g. "openai/gpt-4o" → "gpt-4o"
+      upstreamModel = model.split('/').slice(1).join('/');
+    } else if (model !== 'auto' && provider.models && provider.models.length > 0) {
+      // Find exact or prefix match in provider's models
+      const exact = provider.models.find(m => m === model);
+      const prefix = provider.models.find(m => m.startsWith(model) || model.startsWith(m));
+      upstreamModel = exact || prefix || provider.models[0];
+    } else if (model === 'auto' && provider.models && provider.models.length > 0) {
+      upstreamModel = provider.models[0];
+    }
+
+    const upstreamBody = { ...body, model: upstreamModel };
     const headers = { 'Content-Type': 'application/json' };
     if (apiKeyHeader) headers['Authorization'] = `Bearer ${apiKeyHeader}`;
 
