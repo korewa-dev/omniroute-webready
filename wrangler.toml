@@ -1,6 +1,6 @@
 name = "omniroute-webready"
 compatibility_date = "2026-09-05"
-pages_build_output_dir = "."
+pages_build_output_dir = "./public"
 
 [[d1_databases]]
 binding = "DB"
@@ -9,3 +9,4 @@ database_id = "b2d908dc-8c91-4fe2-93f0-8c40bfc2a02e"
 
 [vars]
 ENVIRONMENT = "production"
+REQUIRE_API_KEY = "false"

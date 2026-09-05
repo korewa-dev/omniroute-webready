@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OmniRoute — AI Gateway</title>
+  <link rel="stylesheet" href="/assets/css/style.css">
+</head>
+<body>
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <h1>🚀 OmniRoute</h1>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section">
+        <div class="nav-section-title">Main</div>
+        <div class="nav-item active" data-page="dashboard">
+          <span>📊</span> Dashboard
+        </div>
+        <div class="nav-item" data-page="chat">
+          <span>💬</span> Chat
+        </div>
+        <div class="nav-item" data-page="models">
+          <span>🤖</span> Models
+        </div>
+        <div class="nav-item" data-page="providers">
+          <span>🔌</span> Providers
+        </div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-section-title">Manage</div>
+        <div class="nav-item" data-page="apikeys">
+          <span>🔑</span> API Keys
+        </div>
+        <div class="nav-item" data-page="usage">
+          <span>📈</span> Usage
+        </div>
+        <div class="nav-item" data-page="settings">
+          <span>⚙️</span> Settings
+        </div>
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="status-indicator">
+        <div class="status-dot" id="statusDot"></div>
+        <span id="statusText">Checking...</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main">
+    <div class="topbar">
+      <h2 id="pageTitle">Dashboard</h2>
+      <div class="topbar-actions">
+        <button class="btn btn-secondary" id="refreshBtn">Refresh</button>
+        <button class="btn btn-primary" id="newChatBtn">New Chat</button>
+      </div>
+    </div>
+
+    <div class="content">
+      <!-- Dashboard -->
+      <div class="page active" id="page-dashboard">
+        <div class="grid">
+          <div class="card">
+            <div class="card-title">Providers</div>
+            <div class="card-value" id="statProviders">-</div>
+            <div class="card-subtitle">Connected providers</div>
+          </div>
+          <div class="card">
+            <div class="card-title">Models</div>
+            <div class="card-value" id="statModels">-</div>
+            <div class="card-subtitle">Available models</div>
+          </div>
+          <div class="card">
+            <div class="card-title">Requests</div>
+            <div class="card-value" id="statRequests">-</div>
+            <div class="card-subtitle">Last 24 hours</div>
+          </div>
+          <div class="card">
+            <div class="card-title">Tokens</div>
+            <div class="card-value" id="statTokens">-</div>
+            <div class="card-subtitle">Used today</div>
+          </div>
+        </div>
+
+        <div class="grid">
+          <div class="card">
+            <div class="card-title">Quick Chat</div>
+            <div class="chat-container" style="height: 300px;">
+              <div class="chat-messages" id="dashMessages"></div>
+              <div class="chat-input">
+                <input type="text" id="dashInput" placeholder="Ask anything..." />
+                <button class="btn btn-primary" id="dashSend">Send</button>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">Recent Requests</div>
+            <div class="recent-list" id="recentList"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chat -->
+      <div class="page" id="page-chat">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Chat</div>
+            <select id="chatModelSelect" class="setting-input" style="width: auto;">
+              <option value="auto">Auto</option>
+            </select>
+          </div>
+          <div class="chat-container" style="height: calc(100vh - 250px);">
+            <div class="chat-messages" id="chatMessages"></div>
+            <div class="chat-input">
+              <input type="text" id="chatInput" placeholder="Send a message... (Enter to send)" />
+              <button class="btn btn-primary" id="chatSend">Send</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Models -->
+      <div class="page" id="page-models">
+        <div class="card">
+          <div class="card-title">Available Models</div>
+          <div id="modelsList"></div>
+        </div>
+      </div>
+
+      <!-- Providers -->
+      <div class="page" id="page-providers">
+        <div class="card">
+          <div class="card-title">Connected Providers</div>
+          <div id="providersList"></div>
+        </div>
+      </div>
+
+      <!-- API Keys -->
+      <div class="page" id="page-apikeys">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">API Keys</div>
+            <button class="btn btn-primary" id="addKeyBtn">Add Key</button>
+          </div>
+          <div id="apiKeysList"></div>
+        </div>
+      </div>
+
+      <!-- Usage -->
+      <div class="page" id="page-usage">
+        <div class="card">
+          <div class="card-title">Usage Analytics</div>
+          <div id="usageStats"></div>
+        </div>
+      </div>
+
+      <!-- Settings -->
+      <div class="page" id="page-settings">
+        <div class="card">
+          <div class="settings-section">
+            <h3>Connection</h3>
+            <div class="setting-row">
+              <span class="setting-label">API Endpoint</span>
+              <input type="text" class="setting-input" id="setEndpoint" value="/v1" />
+            </div>
+            <div class="setting-row">
+              <span class="setting-label">API Key</span>
+              <input type="password" class="setting-input" id="setApiKey" placeholder="Optional" />
+            </div>
+            <div class="setting-row">
+              <span class="setting-label">Default Model</span>
+              <input type="text" class="setting-input" id="setModel" value="auto" />
+            </div>
+          </div>
+          <div class="settings-section">
+            <h3>About</h3>
+            <div class="setting-row">
+              <span class="setting-label">Version</span>
+              <span>OmniRoute WebReady v1.0.0</span>
+            </div>
+            <div class="setting-row">
+              <span class="setting-label">Backend</span>
+              <span>Cloudflare Workers + D1</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="/assets/js/app.js"></script>
+</body>
+</html>
